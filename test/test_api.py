@@ -24,7 +24,7 @@ from yaml.constructor import ConstructorError
 from ansible_vault.testing import decrypt_text
 
 
-PY3 = sys.version_info[0] > 2
+PY2 = sys.version_info[0] <= 2
 
 
 class _TestBase(object):
@@ -40,7 +40,7 @@ class TestVaultLoadRaw(_TestBase):
     def test_can(self, vaulted_fp):
         actual = self._makeOne('password').load_raw(vaulted_fp.read())
         expected = 'test\n...\n'
-        if PY3:
+        if not PY2:
             expected = expected.encode('utf-8')
         assert actual == expected
 
@@ -105,8 +105,11 @@ class TestVaultDump(_TestBase):
         fp = tmpdir.join('vault.txt')
         self._makeOne(secret).dump(plaintext, fp)
 
-        actual = decrypt_text(fp.read(), secret)
-        assert actual == "test\n...\n"
+        if PY2:
+            expected = "!!python/unicode 'test'\n"
+        else:
+            expected = "test\n...\n"
+        assert decrypt_text(fp.read(), secret) == expected
 
     def test_dump_text(self):
         plaintext = 'test'
@@ -114,5 +117,8 @@ class TestVaultDump(_TestBase):
 
         dumped = self._makeOne(secret).dump(plaintext)
 
-        actual = decrypt_text(dumped, secret)
-        assert actual == "test\n...\n"
+        if PY2:
+            expected = "!!python/unicode 'test'\n"
+        else:
+            expected = "test\n...\n"
+        assert decrypt_text(dumped, secret) == expected

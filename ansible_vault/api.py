@@ -16,6 +16,8 @@
 #
 from __future__ import absolute_import
 
+import sys
+
 import ansible
 import yaml
 try:
@@ -24,9 +26,8 @@ except ImportError:
     # Ansible<2.0
     from ansible.utils.vault import VaultLib
 
-from ._compat import PY3
 
-
+_PY2 = sys.version_info[0] <= 2
 _ansible_ver = float('.'.join(ansible.__version__.split('.')[:2]))
 
 
@@ -54,7 +55,7 @@ class Vault(object):
     def dump_raw(self, text, stream=None):
         """Encrypt raw data and write to stream."""
         encrypted = self.vault.encrypt(text)
-        if PY3:
+        if not _PY2:
             encrypted = encrypted.decode('utf-8')
 
         if stream:
